@@ -1,0 +1,48 @@
+services:
+  # --- LOGGING (LOKI) ---
+  loki:
+    image: grafana/loki:3.0.0
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+
+  promtail:
+    image: grafana/promtail:3.0.0
+    volumes:
+      - ./config/promtail.yml:/etc/promtail/config.yml
+      - /var/log:/var/log:ro            # Leser systemlogger
+    command: -config.file=/etc/promtail/config.yml
+
+  # --- METRIKKER (PROMETHEUS) ---
+  prometheus:
+    image: prom/prometheus:latest
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  # Henter tall fra din Ubuntu-maskin (CPU, Minne, Disk)
+  node-exporter:
+    image: prom/node-exporter:latest
+#    network_mode: host  # Viktig for å få ekte tall fra hosten
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+
+  # --- VISUALISERING (GRAFANA) ---
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    volumes:
+      # 1. Datakilden (Loki/Prometheus)
+      - ./config/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
+      # 2. Oppskriften vi lagde i Steg 1 (forteller Grafana hvor filene er)
+      - ./config/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml
+      # 3. Selve mappen med JSON-filen din (monteres dit oppskriften peker)
+      - ./dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin

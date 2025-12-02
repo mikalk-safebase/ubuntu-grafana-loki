@@ -1,0 +1,45 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  # 1. Systemlogger (Syslog, Kernel, Auth)
+  - job_name: system
+    static_configs:
+    - targets:
+        - localhost
+      labels:
+        job: varlogs
+        __path__: /var/log/{*.log,syslog}
+        level: INFO
+
+    pipeline_stages:
+      - regex:
+          expression: '(?P<level>(ERROR|WARN|INFO))'
+      - labels:
+          level:
+
+  # 2. Pakke-logger (APT/DPKG) - Veldig nyttig historikk!
+  - job_name: packages
+    static_configs:
+    - targets:
+        - localhost
+      labels:
+        job: apt
+        __path__: /var/log/apt/*.log
+ 
+    pipeline_stages:
+      # 1. Vi prøver å finne et eksplisitt nivå (f.eks. "Error:", "Warning:")
+      - regex:
+          expression: '^(?P<level>(ERROR|WARN|INFO))'
+
+      # 2. Hvis vi IKKE fant noe nivå i steget over, setter vi nivået til "info" manuelt.
+      # Dette tvinger Grafana til å slutte å gjette basert på ordet "error" midt i setninger.
+      - labels:
+          level:
