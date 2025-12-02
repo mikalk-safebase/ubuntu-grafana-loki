@@ -15,7 +15,7 @@ docker compose up -d
 
 **Lag et logcli-alias:**
 ```bash
-alias logcli='docker run --net=host --rm -i grafana/logcli:3.0.0 --addr="http://localhost:3100" --timezone=Local'
+alias logcli='docker run --net=host --rm -i -v /etc/localtime:/etc/localtime:ro grafana/logcli:3.0.0 --addr="http://localhost:3100" --timezone=Local'
 ```
 
 
@@ -24,6 +24,12 @@ Bruk `|=` for å filtrere linjer som *må* inneholde teksten.
 
 ```bash
 logcli query '{job="varlogs"} |= "error"'
+```
+
+### Søk etter tekst (Case insensitive):
+|~ angir regex. (?i) gjør at den finner både "Error", "error" og "ERROR".
+```bash
+logcli query '{job="varlogs"} |~ "(?i)error"'
 ```
 
 ### Ekskluder tekst (Som grep -v):
@@ -37,19 +43,14 @@ logcli query '{job="varlogs"} != "debug" != "info"'
 logcli query --tail '{job="varlogs"}'
 ```
 
-### Søk etter feil:
-|~ angir regex. (?i) gjør at den finner både "Error", "error" og "ERROR".
-```bash
-logcli query '{job="varlogs"} |~ "(?i)error"'
-```
-
 ### Siste 2 timer:
 ```bash
 logcli query --since=2h '{job="varlogs"}'
 ```
 
 ### Spesifikt tidsrom (ISO 8601):
-
+Bruk formatet `YYYY-MM-DDTHH:MM:SSZ` (UTC). 
+Tips: Du kan bruke `date -u` i terminalen for å sjekke hva klokka er i UTC akkurat nå.
 ```bash
 logcli query --from="2025-12-02T04:00:00Z" --to="2025-12-02T05:00:00Z" '{job="varlogs"}'
 ```
