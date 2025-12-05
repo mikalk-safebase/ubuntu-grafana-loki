@@ -4,10 +4,8 @@ global:
 scrape_configs:
   - job_name: 'prometheus'
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ['127.0.0.1:9090']
 
   - job_name: 'node_exporter'
     static_configs:
-      # Merk: Siden node-exporter kjører i container-nettverket
-      # bruker vi servicenavnet som DNS.
-      - targets: ['node-exporter:9100']
+      - targets: ['127.0.0.1:9100']

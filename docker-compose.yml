@@ -16,26 +16,26 @@ services:
   # --- METRIKKER (PROMETHEUS) ---
   prometheus:
     image: prom/prometheus:latest
+    network_mode: host
     command:
       - --config.file=/etc/prometheus/prometheus.yml
     volumes:
       - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
-    ports:
-      - "9090:9090"
 
   # Henter tall fra din Ubuntu-maskin (CPU, Minne, Disk)
   node-exporter:
     image: prom/node-exporter:latest
-#    network_mode: host  # Viktig for å få ekte tall fra hosten
+    network_mode: host
     pid: host
     volumes:
       - /:/host:ro,rslave
-
+    command:
+      - '--path.rootfs=/host'
+  
   # --- VISUALISERING (GRAFANA) ---
   grafana:
     image: grafana/grafana:latest
-    ports:
-      - "3000:3000"
+    network_mode: host
     volumes:
       # 1. Datakilden (Loki/Prometheus)
       - ./config/datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml
